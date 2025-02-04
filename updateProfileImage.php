@@ -1,63 +1,72 @@
 <?php
-// Enable CORS if necessary
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST");
+// Database connection parameters
+$host = 'localhost';
+$dbname = 'autolink';
+$username = 'root';
+$password = '';
 
-// Database connection (replace with your DB settings)
-$host = "localhost";
-$db_user = "root";
-$db_pass = "";
-$db_name = "autolink"; // Change to your actual database name
-
-// Create connection
-$conn = new mysqli($host, $db_user, $db_pass, $db_name);
+// Create database connection
+$conn = new mysqli($host, $username, $password, $dbname);
 
 // Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die(json_encode(["success" => false, "message" => "Database connection failed."]));
 }
 
-// Check if the file is uploaded and the email is received
-if (isset($_FILES['profile_image']) && isset($_POST['email'])) {
-    $email = $_POST['email'];  // User email
-    $image = $_FILES['profile_image']; // Uploaded image
+// Ensure it's a POST request
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Get user email
+    $email = $_POST['email'];
 
-    // Generate a unique file name
-    $imageName = uniqid() . '-' . basename($image['name']);
-    $targetDir = "uploads/profile_images/"; // Directory to store images
-    $targetFile = $targetDir . $imageName;
+    // Check if email is provided
+    if (empty($email)) {
+        echo json_encode(["success" => false, "message" => "Email is required."]);
+        exit();
+    }
 
-    // Check if the image is an actual image or fake one
-    if (getimagesize($image["tmp_name"]) !== false) {
-        // Move the uploaded file to the target directory
-        if (move_uploaded_file($image["tmp_name"], $targetFile)) {
-            // Store the new image URL in the database for the user
-            $imageUrl = "https://your-server-url.com/" . $targetFile; // URL to access the image
+    // Check if file is uploaded
+    if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = 'profile_images/'; // Folder where images will be stored
 
-            // Update the user's profile image URL in the database
+        // Create directory if not exists
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        // Validate file type (Only allow JPG, PNG)
+        $allowedTypes = ['image/jpeg', 'image/png'];
+        $fileType = $_FILES['profile_image']['type'];
+
+        if (!in_array($fileType, $allowedTypes)) {
+            echo json_encode(["success" => false, "message" => "Only JPG and PNG files are allowed."]);
+            exit();
+        }
+
+        // Generate a unique filename
+        $fileName = time() . '-' . basename($_FILES['profile_image']['name']);
+        $uploadPath = $uploadDir . $fileName;
+
+        // Move the uploaded file
+        if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploadPath)) {
+            $imageUrl = "http://localhost/AutoLink/$uploadPath"; // URL for the image
+
+            // Update user's profile image in the database
             $stmt = $conn->prepare("UPDATE users SET profile_image = ? WHERE email = ?");
             $stmt->bind_param("ss", $imageUrl, $email);
-            $stmt->execute();
-
-            // Check if the update was successful
-            if ($stmt->affected_rows > 0) {
-                $response = array('success' => true, 'message' => $imageUrl);
-                echo json_encode($response);
+            
+            if ($stmt->execute()) {
+                echo json_encode(["success" => true, "message" => "Profile image uploaded successfully.", "imageUrl" => $imageUrl]);
             } else {
-                echo json_encode(array('success' => false, 'message' => 'Failed to update image.'));
+                echo json_encode(["success" => false, "message" => "Database update failed."]);
             }
-
             $stmt->close();
         } else {
-            echo json_encode(array('success' => false, 'message' => 'Failed to upload image.'));
+            echo json_encode(["success" => false, "message" => "Failed to move uploaded file."]);
         }
     } else {
-        echo json_encode(array('success' => false, 'message' => 'File is not a valid image.'));
+        echo json_encode(["success" => false, "message" => "No file uploaded or there was an error."]);
     }
-} else {
-    echo json_encode(array('success' => false, 'message' => 'Email or image not provided.'));
 }
 
-// Close the database connection
 $conn->close();
 ?>
