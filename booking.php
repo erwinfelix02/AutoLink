@@ -1,12 +1,7 @@
 <?php
 // Set the content type to JSON
 header('Content-Type: application/json');
-
-// Database connection parameters
-$host = 'localhost'; // Database host
-$dbname = 'autolink'; // Your database name
-$username = 'root'; // Your database username
-$password = ''; // Your database password
+require 'config.php';
 
 // Create a new PDO instance for database connection
 try {
