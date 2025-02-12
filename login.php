@@ -74,7 +74,7 @@ function generateJWT($userId, $email) {
         'userId' => $userId,
         'email' => $email,
         'iat' => time(), // Issued at time
-        'exp' => time() + 3600 // Expiration time (1 hour from now)
+        'exp' => time() + 3600
     ]));
 
     $signature = hash_hmac('sha256', "$header.$payload", 'your_secret_key', true);
