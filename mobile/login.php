@@ -58,4 +58,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Invalid request method
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
 }
+
+// Function to generate JWT token
+function generateJWT($userId, $email) {
+    $header = base64_encode(json_encode([
+        'alg' => 'HS256',
+        'typ' => 'JWT'
+    ]));
+
+    $payload = base64_encode(json_encode([
+        'userId' => $userId,
+        'email' => $email,
+        'iat' => time(), // Issued at time
+        'exp' => time() + 3600 // Expiration time (1 hour from now)
+    ]));
+
+    $signature = hash_hmac('sha256', "$header.$payload", 'your_secret_key', true);
+    $signature = base64_encode($signature);
+
+    // Return the JWT token
+    return "$header.$payload.$signature";
+}
 ?>
