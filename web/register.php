@@ -15,11 +15,11 @@ if (isset($data->email) && isset($data->password)) {
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
     try {
-        // Ensure that the $conn (database connection) is connected
-        if ($conn) {
+        // Ensure that the $pdo (database connection) is connected
+        if ($pdo) {
             // Prepare SQL query to insert a new admin into the database
             $query = "INSERT INTO admins (email, password) VALUES (:email, :password)";
-            $stmt = $conn->prepare($query); // Use $conn for the database connection
+            $stmt = $pdo->prepare($query); // Use $pdo for the database connection
             $stmt->bindParam(':email', $email);
             $stmt->bindParam(':password', $hashedPassword);
 

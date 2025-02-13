@@ -16,7 +16,7 @@ if (isset($data->email) && isset($data->password)) {
     try {
         // Prepare SQL query to validate login credentials
         $query = "SELECT * FROM admins WHERE email = :email";
-        $stmt = $conn->prepare($query); 
+        $stmt = $pdo->prepare($query); // Use $pdo here instead of $conn
         $stmt->bindParam(':email', $email);
         $stmt->execute();
         
