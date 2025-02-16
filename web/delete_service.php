@@ -1,46 +1,42 @@
 <?php
-header("Content-Type: application/json");
-require 'config.php';
+require 'config.php'; // Ensure the database connection
 
-// Ensure request method is DELETE
-if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
-    echo json_encode(["success" => false, "error" => "Invalid request method"]);
-    exit;
-}
+header('Content-Type: application/json'); // Ensure JSON response
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// Read JSON input
-$data = json_decode(file_get_contents("php://input"), true);
+// Read incoming request
+$input = json_decode(file_get_contents("php://input"), true);
 
-// Check if the JSON is valid
-if ($data === null) {
-    echo json_encode(["success" => false, "error" => "Invalid JSON received", "raw_input" => file_get_contents("php://input")]);
-    exit;
-}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($input['id'])) {
+    $service_id = $input['id'];
 
-// Validate service ID
-if (!isset($data['id']) || empty($data['id'])) {
-    echo json_encode(["success" => false, "error" => "Missing service ID"]);
-    exit;
-}
+    try {
+        // First, check if service exists
+        $stmt = $pdo->prepare("SELECT image_url FROM services WHERE id = ?");
+        $stmt->execute([$service_id]);
+        $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$service_id = $data['id'];
-
-try {
-    // Prepare DELETE query
-    $stmt = $pdo->prepare("DELETE FROM services WHERE id = :id");
-    $stmt->bindParam(':id', $service_id, PDO::PARAM_INT);
-
-    if ($stmt->execute()) {
-        // Check if any row was deleted
-        if ($stmt->rowCount() > 0) {
-            echo json_encode(["success" => true, "message" => "Service deleted successfully"]);
-        } else {
-            echo json_encode(["success" => false, "error" => "Service not found"]);
+        if (!$service) {    
+            echo json_encode(["success" => false, "message" => "Service not found."]);
+            exit;
         }
-    } else {
-        echo json_encode(["success" => false, "error" => "Failed to delete service"]);
+
+        // Delete service from database
+        $stmt = $pdo->prepare("DELETE FROM services WHERE id = ?");
+        $stmt->execute([$service_id]);
+
+        // Remove service image if exists
+        $imagePath = "../uploads/" . $service['image_url']; 
+        if ($service['image_url'] && file_exists($imagePath)) {
+            unlink($imagePath);
+        }
+
+        echo json_encode(["success" => true, "message" => "Service deleted successfully."]);
+    } catch (PDOException $e) {
+        echo json_encode(["success" => false, "message" => "Database error: " . $e->getMessage()]);
     }
-} catch (PDOException $e) {
-    echo json_encode(["success" => false, "error" => "Database error: " . $e->getMessage()]);
+} else {
+    echo json_encode(["success" => false, "message" => "Invalid request."]);
 }
 ?>
