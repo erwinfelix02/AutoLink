@@ -1,9 +1,9 @@
 <?php
-require 'config.php'; // Ensure correct path
+require 'config.php';
 
 header('Content-Type: application/json');
 
-$base_url = "http://localhost/AutoLink/web/uploads/"; // Adjust to your actual path
+$base_url = "http://localhost/AutoLink/web/uploads/"; 
 
 try {
     $stmt = $pdo->query("SELECT * FROM services");
@@ -12,12 +12,10 @@ try {
     foreach ($services as &$service) {
         if (!empty($service['image_url'])) {
             if (str_starts_with($service['image_url'], "uploads/")) {
-                // Append full URL if it's a file path
                 $service['image_url'] = $base_url . basename($service['image_url']);
             }
-            // If it's base64, leave it as is (or consider removing it)
         } else {
-            $service['image_url'] = $base_url . "default.jpg"; // Default image if missing
+            $service['image_url'] = $base_url . "default.jpg"; 
         }
     }
 
