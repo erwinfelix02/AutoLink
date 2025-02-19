@@ -1,18 +1,16 @@
 <?php
-require 'config.php'; // Ensure the database connection
+require 'config.php'; 
 
-header('Content-Type: application/json'); // Ensure JSON response
+header('Content-Type: application/json'); 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Read incoming request
 $input = json_decode(file_get_contents("php://input"), true);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($input['id'])) {
     $service_id = $input['id'];
 
     try {
-        // First, check if service exists
         $stmt = $pdo->prepare("SELECT image_url FROM services WHERE id = ?");
         $stmt->execute([$service_id]);
         $service = $stmt->fetch(PDO::FETCH_ASSOC);
