@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             // User not found
-            echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
+            echo json_encode(['success' => false, 'message' => 'Invalid Email or Password']);
         }
     } catch (Exception $e) {
         // Handle any other errors (generic error message)
