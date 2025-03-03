@@ -48,8 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Move the uploaded file
         if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploadPath)) {
-            $imageUrl = "http://localhost/AutoLink/$uploadPath"; // URL for the image
-
+            $imageUrl = "http://localhost/AutoLink/$uploadPath";
             // Update user's profile image in the database
             $stmt = $conn->prepare("UPDATE users SET profile_image = ? WHERE email = ?");
             $stmt->bind_param("ss", $imageUrl, $email);
