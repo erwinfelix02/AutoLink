@@ -11,6 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $email = $_POST['email'] ?? '';
     $make = $_POST['make'] ?? '';
     $model = $_POST['model'] ?? '';
+    $transmission = $_POST['transmission'] ?? '';
     $fuelType = $_POST['fuel_type'] ?? '';
     $year = $_POST['year'] ?? '';
     $enginePower = $_POST['engine_power'] ?? '';
@@ -19,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $image = $_POST['image'] ?? ''; // Base64 encoded image
 
     // Check required fields
-    if (empty($email) || empty($make) || empty($model) || empty($fuelType) || 
+    if (empty($email) || empty($make) || empty($model) || empty($transmission) || empty($fuelType) || 
         empty($year) || empty($enginePower) || empty($tankCapacity) || empty($license)) {
         echo json_encode(["status" => "error", "message" => "Missing required fields"]);
         exit;
@@ -41,13 +42,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     try {
         // Prepare the PDO statement
-        $stmt = $conn->prepare("INSERT INTO vehicles (email, make, model, fuel_type, year, engine_power, tank_capacity, license, image_path) 
-                                VALUES (:email, :make, :model, :fuelType, :year, :enginePower, :tankCapacity, :license, :imagePath)");
+        $stmt = $conn->prepare("INSERT INTO vehicles (email, make, model, transmission, fuel_type, year, engine_power, tank_capacity, license, image_path) 
+                                VALUES (:email, :make, :model, :transmission, :fuelType, :year, :enginePower, :tankCapacity, :license, :imagePath)");
 
         // Bind parameters
         $stmt->bindParam(':email', $email, PDO::PARAM_STR);
         $stmt->bindParam(':make', $make, PDO::PARAM_STR);
         $stmt->bindParam(':model', $model, PDO::PARAM_STR);
+        $stmt->bindParam(':transmission', $transmission, PDO::PARAM_STR);
         $stmt->bindParam(':fuelType', $fuelType, PDO::PARAM_STR);
         $stmt->bindParam(':year', $year, PDO::PARAM_INT);
         $stmt->bindParam(':enginePower', $enginePower, PDO::PARAM_STR);
