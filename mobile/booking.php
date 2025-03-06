@@ -22,7 +22,8 @@ $data = json_decode(file_get_contents('php://input'), true);
 // Check if required fields are present in the request
 if (
     isset($data['userId'], $data['serviceName'], $data['servicePrice'], $data['serviceDescription'], 
-    $data['bookingDate'], $data['bookingTime'], $data['inclusions'], $data['userEmail'], $data['userName'])
+    $data['bookingDate'], $data['bookingTime'], $data['selectedVehicle'], $data['inclusions'], 
+    $data['userEmail'], $data['userName'])
 ) {
     // Extracting the booking data from the request
     $userId = $data['userId'];
@@ -31,6 +32,7 @@ if (
     $serviceDescription = $data['serviceDescription'];
     $bookingDate = $data['bookingDate'];
     $bookingTime = $data['bookingTime'];
+    $selectedVehicle = $data['selectedVehicle'];
     $inclusions = $data['inclusions'];
     $userEmail = $data['userEmail'];
     $userName = $data['userName'];
@@ -38,9 +40,7 @@ if (
     // Validate the date format (assuming the format is YYYY-MM-DD)
     $dateFormat = 'Y-m-d';
     $d = DateTime::createFromFormat($dateFormat, $bookingDate);
-    if ($d && $d->format($dateFormat) === $bookingDate) {
-        // The date is valid
-    } else {
+    if (!$d || $d->format($dateFormat) !== $bookingDate) {
         // If the date is invalid, return an error response
         echo json_encode([
             'success' => false,
@@ -50,8 +50,8 @@ if (
     }
 
     // Prepare an SQL statement to insert the booking data into the database
-    $query = "INSERT INTO bookings (user_id, service_name, service_price, service_description, booking_date, booking_time, inclusions, user_email, user_name)
-              VALUES (:userId, :serviceName, :servicePrice, :serviceDescription, :bookingDate, :bookingTime, :inclusions, :userEmail, :userName)";
+    $query = "INSERT INTO bookings (user_id, service_name, service_price, service_description, booking_date, booking_time, selected_vehicle, inclusions, user_email, user_name)
+              VALUES (:userId, :serviceName, :servicePrice, :serviceDescription, :bookingDate, :bookingTime, :selectedVehicle, :inclusions, :userEmail, :userName)";
     
     // Prepare the SQL statement
     $stmt = $conn->prepare($query);
@@ -63,6 +63,7 @@ if (
     $stmt->bindParam(':serviceDescription', $serviceDescription);
     $stmt->bindParam(':bookingDate', $bookingDate);
     $stmt->bindParam(':bookingTime', $bookingTime);
+    $stmt->bindParam(':selectedVehicle', $selectedVehicle);
     $stmt->bindParam(':inclusions', $inclusions);
     $stmt->bindParam(':userEmail', $userEmail);
     $stmt->bindParam(':userName', $userName);
@@ -81,6 +82,7 @@ if (
                     'bookingId' => $bookingId,
                     'serviceName' => $serviceName,
                     'bookingTime' => $bookingTime,
+                    'selectedVehicle' => $selectedVehicle,
                     'userEmail' => $userEmail
                 ]
             ]
