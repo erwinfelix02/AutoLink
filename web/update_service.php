@@ -5,31 +5,41 @@ require "config.php";
 $response = ["success" => false, "message" => ""];
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (!isset($_POST["service_id"], $_POST["service_name"], $_POST["service_price"], $_POST["service_description"])) {
+    // Kunin ang mga datos mula sa POST request
+    $service_id = isset($_POST["id"]) ? intval($_POST["id"]) : null;
+    $service_name = isset($_POST["name"]) ? trim($_POST["name"]) : null;
+    $service_price = isset($_POST["price"]) ? floatval($_POST["price"]) : null;
+    $service_description = isset($_POST["description"]) ? trim($_POST["description"]) : null;
+    $image_path = null;
+
+    // Debugging logs
+    error_log("Received ID: " . $service_id);
+    error_log("Received Name: " . $service_name);
+    error_log("Received Price: " . $service_price);
+    error_log("Received Description: " . $service_description);
+
+    if (!$service_id || !$service_name || !$service_price || !$service_description) {
         $response["message"] = "Missing required fields.";
         echo json_encode($response);
         exit;
     }
 
-    $service_id = intval($_POST["service_id"]); // Ensure it's an integer
-    $service_name = trim($_POST["service_name"]);
-    $service_price = floatval($_POST["service_price"]); // Ensure it's a valid number
-    $service_description = trim($_POST["service_description"]);
-    $image_path = null;
-
     try {
         $pdo->beginTransaction();
 
-        // Check if an image was uploaded
+        // Kunin ang kasalukuyang image path mula sa database
+        $stmt = $pdo->prepare("SELECT image_url FROM services WHERE id = ?");
+        $stmt->execute([$service_id]);
+        $currentImage = $stmt->fetchColumn(); // Fetch current image
+
+        // Debugging log
+        error_log("Current Image Path: " . $currentImage);
+
+        // Check kung may bagong image na na-upload
         if (isset($_FILES["service_image"]) && $_FILES["service_image"]["error"] == 0) {
             $target_dir = "uploads/";
             if (!is_dir($target_dir)) {
                 mkdir($target_dir, 0777, true);
-            }
-
-            // Validate file size (max 2MB)
-            if ($_FILES["service_image"]["size"] > 2 * 1024 * 1024) {
-                throw new Exception("Image file is too large. Max size: 2MB.");
             }
 
             // Validate file type
@@ -44,13 +54,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $target_file = $target_dir . $image_name;
 
             if (move_uploaded_file($_FILES["service_image"]["tmp_name"], $target_file)) {
-                $image_path = $image_name; // Store only the filename
+                $image_path = "uploads/" . $image_name; // Ensure it includes "uploads/"
+
+                // Optional: Delete old image if exists
+                if (!empty($currentImage) && file_exists($currentImage)) {
+                    unlink($currentImage);
+                }
+
+                // Debugging log
+                error_log("New Image Path: " . $image_path);
             } else {
                 throw new Exception("Failed to upload image.");
             }
+        } else {
+            $image_path = $currentImage; // Keep old image if no new one uploaded
         }
 
-        // Update service details
+        // Update service details with or without image update
         if ($image_path) {
             $stmt = $pdo->prepare("UPDATE services SET name=?, price=?, description=?, image_url=? WHERE id=?");
             $stmt->execute([$service_name, $service_price, $service_description, $image_path, $service_id]);
@@ -62,9 +82,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $pdo->commit();
         $response["success"] = true;
         $response["message"] = "Service updated successfully.";
+        $response["image_url"] = $image_path; // Send back the saved image path for confirmation
     } catch (Exception $e) {
         $pdo->rollBack();
         $response["message"] = "Error: " . $e->getMessage();
+        error_log("Update Error: " . $e->getMessage());
     }
 } else {
     $response["message"] = "Invalid request method.";
