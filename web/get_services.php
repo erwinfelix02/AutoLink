@@ -10,17 +10,12 @@ try {
     $services = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($services as &$service) {
-        if (!empty($service['image_url'])) {
-            if (str_starts_with($service['image_url'], "uploads/")) {
-                $service['image_url'] = $base_url . basename($service['image_url']);
-            }
-        } else {
-            $service['image_url'] = $base_url . "default.jpg"; 
-        }
+        $service['image_url'] = !empty($service['image_url']) ? $base_url . $service['image_url'] : $base_url . "default.jpg";
     }
 
-    echo json_encode($services);
+    echo json_encode(["success" => true, "services" => $services]);
 } catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Error fetching services: ' . $e->getMessage()]);
+    echo json_encode(["success" => false, "message" => "Error fetching services: " . $e->getMessage()]);
 }
+
 ?>

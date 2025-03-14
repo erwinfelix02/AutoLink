@@ -1,26 +1,23 @@
 <?php
-require 'config.php'; 
+require 'config.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = $_POST['name'];
+    $price = $_POST['price'];
     $description = $_POST['description'];
 
     if (isset($_FILES['image'])) {
         $image = $_FILES['image'];
-        $imageName = time() . "_" . basename($image['name']); // Unique filename
-        $imagePath = '../uploads/' . $imageName; // Save inside 'uploads' folder
+        $imageName = time() . "_" . basename($image['name']); // ✅ Unique filename
+        $imagePath = '../uploads/' . $imageName; // ✅ Actual file path
 
-        // Move uploaded file to the 'uploads' folder
+        // Move uploaded file
         if (move_uploaded_file($image['tmp_name'], $imagePath)) {
-            // Save image filename in the database (Not the full path)
-            $stmt = $conn->prepare("INSERT INTO services (name, description, image_path) VALUES (?, ?, ?)");
-            $stmt->bind_param("sss", $name, $description, $imageName);
+            // ✅ Save filename only (not the full path)
+            $stmt = $pdo->prepare("INSERT INTO services (name, price, description, image_url) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$name, $price, $description, $imageName]);
 
-            if ($stmt->execute()) {
-                echo json_encode(["status" => "success", "message" => "Service added!"]);
-            } else {
-                echo json_encode(["status" => "error", "message" => "Database error."]);
-            }
+            echo json_encode(["status" => "success", "message" => "Service added!"]);
         } else {
             echo json_encode(["status" => "error", "message" => "Failed to upload image."]);
         }
@@ -28,4 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         echo json_encode(["status" => "error", "message" => "No image uploaded."]);
     }
 }
+
+
 ?>
