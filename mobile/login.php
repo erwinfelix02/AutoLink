@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         // Check if the user exists in the database
-        $stmt = $conn->prepare("SELECT id, full_name, email, password FROM users WHERE email = :email");
+        $stmt = $conn->prepare("SELECT id, full_name, email, password, refresh_token FROM users WHERE email = :email");
         $stmt->bindParam(':email', $email, PDO::PARAM_STR);
         $stmt->execute();
 
@@ -33,10 +33,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Verify password
             if (password_verify($password, $user['password'])) {
-                // Respond with success and user data
+                // Generate new access token and refresh token
+                $accessToken = generateJWT($user['id'], $user['email']);
+                $refreshToken = generateRefreshToken();
+
+                // Update the user's refresh token in the database
+                $updateStmt = $conn->prepare("UPDATE users SET refresh_token = :refresh_token WHERE email = :email");
+                $updateStmt->bindParam(':refresh_token', $refreshToken, PDO::PARAM_STR);
+                $updateStmt->bindParam(':email', $email, PDO::PARAM_STR);
+                $updateStmt->execute();
+
+                // Respond with success, new access token, and refresh token
                 echo json_encode([
                     'success' => true,
                     'message' => 'Login successful',
+                    'accessToken' => $accessToken,
+                    'refreshToken' => $refreshToken,  // New refresh token
                     'userId' => $user['id'],
                     'fullName' => $user['full_name'],
                     'email' => $user['email']
@@ -59,14 +71,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
 }
 
-// Function to generate JWT token
+// Function to generate JWT token (Access Token)
 function generateJWT($userId, $email) {
-    $header = base64_encode(json_encode([
+    $header = base64UrlEncode(json_encode([
         'alg' => 'HS256',
         'typ' => 'JWT'
     ]));
 
-    $payload = base64_encode(json_encode([
+    $payload = base64UrlEncode(json_encode([
         'userId' => $userId,
         'email' => $email,
         'iat' => time(), // Issued at time
@@ -74,9 +86,19 @@ function generateJWT($userId, $email) {
     ]));
 
     $signature = hash_hmac('sha256', "$header.$payload", 'your_secret_key', true);
-    $signature = base64_encode($signature);
+    $signature = base64UrlEncode($signature);
 
     // Return the JWT token
     return "$header.$payload.$signature";
+}
+
+// Function to generate refresh token
+function generateRefreshToken() {
+    return bin2hex(random_bytes(64));  // Generate a random 64-byte token
+}
+
+// Function to base64 URL-safe encoding
+function base64UrlEncode($data) {
+    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
 }
 ?>
