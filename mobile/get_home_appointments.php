@@ -33,8 +33,9 @@ $sql = "SELECT
             s.image_url
         FROM bookings b
         LEFT JOIN services s ON b.service_name = s.name
-        WHERE b.user_email = :email
-        ORDER BY b.booking_date ASC";  // Order by booking date
+        WHERE b.user_email = :email 
+        AND LOWER(b.status) != 'completed'  -- Exclude completed bookings (case-insensitive)
+        ORDER BY b.booking_date ASC";
 
 try {
     $stmt = $conn->prepare($sql);

@@ -57,7 +57,8 @@ try {
     foreach ($bookings as &$booking) {
         // Ensure values are properly formatted
         $booking['service_name'] = htmlspecialchars($booking['service_name'] ?? "No Service Name");
-        $booking['status'] = htmlspecialchars($booking['status'] ?? "Unknown");
+       // Convert status to "Completed" if it's "completed"
+        $booking['status'] = ucfirst(strtolower(htmlspecialchars($booking['status'] ?? "Unknown")));
 
         // Handle the image URL
         if (!empty($booking['service_image'])) {

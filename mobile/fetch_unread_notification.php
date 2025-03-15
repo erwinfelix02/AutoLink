@@ -8,7 +8,7 @@ if (!isset($_POST['user_email']) || empty($_POST['user_email'])) {
     exit;
 }
 
-$user_email = $_POST['user_email'];
+$userEmail = $_POST['user_email'];
 
 try {
     $sql = "SELECT 
@@ -16,7 +16,7 @@ try {
                 n.booking_id, 
                 b.service_name, 
                 CASE 
-                    WHEN LOWER(n.status) = 'new' THEN 'Your booking is pending approval.'  -- Handle 'New' as 'pending'
+                    WHEN LOWER(n.status) = 'new' THEN 'Your booking is pending approval.'
                     WHEN LOWER(n.status) = 'pending' THEN 'Your booking is pending approval.'
                     WHEN LOWER(n.status) = 'in progress' THEN 'Your booking is currently in progress.'
                     WHEN LOWER(n.status) = 'approved' THEN 'Your booking has been approved!'
@@ -33,7 +33,7 @@ try {
             ORDER BY n.created_at DESC";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bindParam(':user_email', $user_email, PDO::PARAM_STR);
+    $stmt->bindParam(':user_email', $userEmail, PDO::PARAM_STR);
     $stmt->execute();
     
     $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
