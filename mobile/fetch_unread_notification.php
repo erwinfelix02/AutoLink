@@ -14,6 +14,7 @@ try {
     $sql = "SELECT 
                 n.id AS notification_id,
                 n.booking_id, 
+                n.emergency_id, 
                 b.service_name, 
                 CASE 
                     WHEN LOWER(n.status) = 'new' THEN 'Your booking is pending approval.'
@@ -22,15 +23,15 @@ try {
                     WHEN LOWER(n.status) = 'approved' THEN 'Your booking has been approved!'
                     WHEN LOWER(n.status) = 'declined' THEN 'Your booking has been declined.'
                     WHEN LOWER(n.status) = 'completed' THEN 'Your booking has been successfully completed!'
-                    WHEN LOWER(n.status) = 'cancelled' THEN 'Your booking has been cancelled.'
                     ELSE 'Unknown status'
                 END AS message, 
                 LOWER(n.status) AS status,  
                 n.is_read,  
                 DATE_FORMAT(n.created_at, '%Y-%m-%d %H:%i:%s') AS timestamp 
             FROM notifications n
-            INNER JOIN bookings b ON n.booking_id = b.booking_id
-            WHERE n.user_email = :user_email AND n.is_read = 0  -- Fetch only unread notifications
+            LEFT JOIN bookings b ON n.booking_id = b.booking_id
+            WHERE n.user_email = :user_email 
+            AND n.is_read = 0  -- Fetch only unread notifications
             ORDER BY n.created_at DESC";
 
     $stmt = $conn->prepare($sql);
@@ -39,6 +40,7 @@ try {
     
     $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Output the notifications as JSON
     echo json_encode($notifications, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 } catch (PDOException $e) {
     error_log("Database Error: " . $e->getMessage());
