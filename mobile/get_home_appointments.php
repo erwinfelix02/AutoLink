@@ -21,7 +21,7 @@ if (!$conn) {
     exit;
 }
 
-// Fetch bookings and order by booking_date (earliest first)
+// Fetch bookings and exclude "Completed" and "Cancelled" statuses
 $sql = "SELECT 
             b.booking_id,
             b.service_name,
@@ -34,7 +34,7 @@ $sql = "SELECT
         FROM bookings b
         LEFT JOIN services s ON b.service_name = s.name
         WHERE b.user_email = :email 
-        AND LOWER(b.status) != 'completed'  -- Exclude completed bookings (case-insensitive)
+        AND LOWER(b.status) NOT IN ('completed', 'cancelled')  -- Exclude Completed and Cancelled bookings
         ORDER BY b.booking_date ASC";
 
 try {

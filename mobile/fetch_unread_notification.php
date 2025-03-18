@@ -22,6 +22,7 @@ try {
                     WHEN LOWER(n.status) = 'approved' THEN 'Your booking has been approved!'
                     WHEN LOWER(n.status) = 'declined' THEN 'Your booking has been declined.'
                     WHEN LOWER(n.status) = 'completed' THEN 'Your booking has been successfully completed!'
+                    WHEN LOWER(n.status) = 'cancelled' THEN 'Your booking has been cancelled.'
                     ELSE 'Unknown status'
                 END AS message, 
                 LOWER(n.status) AS status,  

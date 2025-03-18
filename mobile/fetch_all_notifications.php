@@ -12,17 +12,18 @@ $userEmail = $_POST['user_email'];
 
 try {
     $sql = "SELECT 
-    n.id AS notification_id,   -- Fetches unique notification_id
-    n.booking_id, 
-    b.service_name, 
-    CASE 
-        WHEN LOWER(n.status) = 'new' THEN 'Your booking is pending approval.'  
-        WHEN LOWER(n.status) = 'pending' THEN 'Your booking is pending approval.'
-        WHEN LOWER(n.status) = 'in progress' THEN 'Your booking is currently in progress.'
-        WHEN LOWER(n.status) = 'approved' THEN 'Your booking has been approved!'
-        WHEN LOWER(n.status) = 'declined' THEN 'Your booking has been declined.'
-        WHEN LOWER(n.status) = 'completed' THEN 'Your booking has been successfully completed!'
-        ELSE 'Unknown status'
+                n.id AS notification_id,   -- Fetches unique notification_id
+                n.booking_id, 
+                b.service_name, 
+                CASE 
+                    WHEN LOWER(n.status) = 'new' THEN 'Your booking is pending approval.'  
+                    WHEN LOWER(n.status) = 'pending' THEN 'Your booking is pending approval.'
+                    WHEN LOWER(n.status) = 'in progress' THEN 'Your booking is currently in progress.'
+                    WHEN LOWER(n.status) = 'approved' THEN 'Your booking has been approved!'
+                    WHEN LOWER(n.status) = 'declined' THEN 'Your booking has been declined.'
+                    WHEN LOWER(n.status) = 'completed' THEN 'Your booking has been successfully completed!'
+                    WHEN LOWER(n.status) = 'cancelled' THEN 'Your booking has been cancelled.'
+                    ELSE 'Unknown status'
                 END AS message, 
                 LOWER(n.status) AS status,  
                 n.is_read,  
@@ -31,7 +32,6 @@ try {
             INNER JOIN bookings b ON n.booking_id = b.booking_id
             WHERE n.user_email = :user_email  -- All notifications, read or unread
             ORDER BY n.created_at DESC";
-
 
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(':user_email', $userEmail, PDO::PARAM_STR);

@@ -20,10 +20,11 @@ try {
     $latitude = filter_var($_POST['latitude'] ?? '', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
     $longitude = filter_var($_POST['longitude'] ?? '', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
     $service_needed = filter_var($_POST['service_needed'] ?? '', FILTER_SANITIZE_STRING);
+    $vehicle = filter_var($_POST['vehicle'] ?? '', FILTER_SANITIZE_STRING); 
 
     // Validate required fields
-    if (empty($email) || empty($full_name) || empty($latitude) || empty($longitude) || empty($service_needed)) {
-        echo json_encode(["success" => false, "message" => "All fields are required"]);
+    if (empty($email) || empty($full_name) || empty($latitude) || empty($longitude) || empty($service_needed) || empty($vehicle)) {
+        echo json_encode(["success" => false, "message" => "All fields, including vehicle selection, are required"]);
         exit;
     }
 
@@ -34,15 +35,16 @@ try {
     }
 
     // Insert data into the database using PDO
-    $stmt = $conn->prepare("INSERT INTO emergency_service (email, full_name, latitude, longitude, service_needed) 
-                            VALUES (:email, :full_name, :latitude, :longitude, :service_needed)");
+    $stmt = $conn->prepare("INSERT INTO emergency_service (email, full_name, latitude, longitude, service_needed, vehicle) 
+                            VALUES (:email, :full_name, :latitude, :longitude, :service_needed, :vehicle)");
     
     $stmt->execute([
         ":email" => $email,
         ":full_name" => $full_name,
         ":latitude" => $latitude,
         ":longitude" => $longitude,
-        ":service_needed" => $service_needed
+        ":service_needed" => $service_needed,
+        ":vehicle" => $vehicle
     ]);
 
     echo json_encode(["success" => true, "message" => "Emergency request submitted successfully"]);
