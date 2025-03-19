@@ -4,7 +4,6 @@ require 'config.php';
 
 header("Content-Type: application/json");
 
-
 $data = json_decode(file_get_contents("php://input"));
 
 if (isset($data->email) && isset($data->password)) {
@@ -19,13 +18,14 @@ if (isset($data->email) && isset($data->password)) {
         $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($admin && password_verify($password, $admin['password'])) {
-            $_SESSION['admin_id'] = $admin['id']; // ✅ Store admin ID in session
-            
+            $_SESSION['admin_id'] = $admin['id'];
+            $_SESSION['profile_picture'] = $admin['profile_image']; // ✅ Profile Picture
+
             echo json_encode([
                 'success' => true,
                 'message' => 'Login successful',
-                'session_data' => $_SESSION,  // ✅ Debug session storage
-                'session_id' => session_id(),
+                'session_data' => $_SESSION,  // ✅ Debug Session Storage
+                'session_id' => session_id(), // ✅ Display Session ID
             ]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
@@ -36,5 +36,4 @@ if (isset($data->email) && isset($data->password)) {
 } else {
     echo json_encode(['success' => false, 'message' => 'Email and password are required']);
 }
-
 ?>
