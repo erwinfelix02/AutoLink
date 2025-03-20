@@ -32,10 +32,10 @@ $sql = "SELECT
             b.booking_date,
             b.booking_time,
             b.status,
-            s.image_url AS service_image
+            COALESCE(s.image_url, '') AS service_image
         FROM bookings b
         LEFT JOIN services s ON b.service_name = s.name
-        WHERE b.status = 'completed' AND b.user_email = :user_email
+        WHERE LOWER(b.status) = 'completed' AND b.user_email = :user_email
         ORDER BY b.booking_date ASC";
 
 try {
@@ -49,7 +49,7 @@ try {
 
     if (empty($bookings)) {
         error_log("❌ No completed bookings found for: " . $user_email);
-        echo json_encode(["success" => false, "message" => "No completed bookings found"]);
+        echo json_encode(["success" => false, "message" => "No completed bookings yet"]);
         exit;
     }
 
@@ -57,32 +57,26 @@ try {
     foreach ($bookings as &$booking) {
         // Ensure values are properly formatted
         $booking['service_name'] = htmlspecialchars($booking['service_name'] ?? "No Service Name");
-       // Convert status to "Completed" if it's "completed"
+
+        // Convert status to "Completed"
         $booking['status'] = ucfirst(strtolower(htmlspecialchars($booking['status'] ?? "Unknown")));
 
         // Handle the image URL
         if (!empty($booking['service_image'])) {
-            $imagePath = ltrim($booking['service_image'], '/');
-            if (!str_starts_with($imagePath, "uploads/")) {
-                $imagePath = "uploads/" . $imagePath;
-            }
+            $imagePath = trim($booking['service_image'], '/');
             $booking['image_url'] = $base_url . rawurlencode(basename($imagePath));
         } else {
             $booking['image_url'] = $base_url . "default.jpg"; // Default image if no image found
         }
 
         // Format booking date and time
-        if (!empty($booking['booking_date'])) {
-            $booking['booking_date'] = (new DateTime($booking['booking_date']))->format('Y-m-d');
-        } else {
-            $booking['booking_date'] = 'N/A';
-        }
+        $booking['booking_date'] = !empty($booking['booking_date']) 
+            ? (new DateTime($booking['booking_date']))->format('Y-m-d') 
+            : 'N/A';
 
-        if (!empty($booking['booking_time'])) {
-            $booking['booking_time'] = (new DateTime($booking['booking_time']))->format('H:i');
-        } else {
-            $booking['booking_time'] = 'N/A';
-        }
+        $booking['booking_time'] = !empty($booking['booking_time']) 
+            ? (new DateTime($booking['booking_time']))->format('H:i') 
+            : 'N/A';
 
         // Remove raw service_image column
         unset($booking['service_image']);
