@@ -20,7 +20,7 @@ try {
             ROUND(AVG(quantity), 2) AS quantityPerFillup,
             ROUND(AVG(cost), 2) AS costPerFillup,
             ROUND(AVG(price), 2) AS averagePricePerLtr,
-            ROUND(SUM(cost), 2) + ROUND(AVG(price), 2) AS totalCost,  -- Corrected total cost calculation
+            ROUND(SUM(cost), 2) AS totalCost,  -- Updated total cost calculation
             MAX(fill_date) AS lastUpdated
         FROM vehicle_fillups
         WHERE user_email = :user_email 
