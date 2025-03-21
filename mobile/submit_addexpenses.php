@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vehicle_make = filter_input(INPUT_POST, 'vehicle_make', FILTER_SANITIZE_STRING);
     $vehicle_model = filter_input(INPUT_POST, 'vehicle_model', FILTER_SANITIZE_STRING);
     $odometer = filter_input(INPUT_POST, 'odometer', FILTER_VALIDATE_INT);
-    $expenses = filter_input(INPUT_POST, 'expenses', FILTER_VALIDATE_FLOAT);
+    $expenses = filter_input(INPUT_POST, 'expenses', FILTER_SANITIZE_STRING);
     $cost = filter_input(INPUT_POST, 'cost', FILTER_VALIDATE_FLOAT);
     $vendor = filter_input(INPUT_POST, 'vendor', FILTER_SANITIZE_STRING);
     $fill_date = filter_input(INPUT_POST, 'fill_date', FILTER_SANITIZE_STRING);
@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$user_email || !$full_name || !$vehicle_make || !$vehicle_model || !$odometer ||
         !$expenses || !$cost || !$vendor || !$fill_date) {
         http_response_code(400);
-        echo json_encode(["success" => false, "message" => "All fields are required and must be valid"]);
+        echo json_encode(["success" => false, "message" => "All fields are required"]);
         exit;
     }
 
