@@ -46,7 +46,7 @@ $sqlEmergency = "SELECT
                     status,
                     request_time AS booking_date,
                     request_time AS booking_time,
-                    '' AS image_url
+                    'emergency_image.jpg' AS image_url
                 FROM emergency_service
                 WHERE user_email = :email 
                 AND LOWER(status) NOT IN ('completed', 'cancelled')
@@ -68,8 +68,9 @@ try {
     // Merge both results
     $allBookings = array_merge($bookings, $emergencyServices);
 
-    // Base URL for image handling
+    // Base URLs
     $base_url = "http://localhost/AutoLink/web/uploads/";
+    $emergency_image_url = "http://localhost/AutoLink/mobile/emergency.jpg"; // Change to match your web-accessible path
 
     foreach ($allBookings as &$booking) {
         // Ensure values are properly formatted
@@ -79,7 +80,9 @@ try {
         $booking['status'] = htmlspecialchars($booking['status'] ?? "Unknown");
 
         // Handle image URLs
-        if (!empty($booking['image_url'])) {
+        if ($booking['service_name'] === "Emergency Service") {
+            $booking['image_url'] = $emergency_image_url; // Use predefined emergency image
+        } elseif (!empty($booking['image_url'])) {
             $imagePath = ltrim($booking['image_url'], '/');
             if (!str_starts_with($imagePath, "uploads/")) {
                 $imagePath = "uploads/" . $imagePath;
