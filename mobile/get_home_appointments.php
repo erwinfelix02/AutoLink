@@ -21,7 +21,7 @@ if (!$conn) {
     exit;
 }
 
-// Query to fetch regular bookings
+// Query to fetch regular bookings (excluding completed/cancelled)
 $sqlBookings = "SELECT 
                     b.booking_id,
                     b.service_name,
@@ -37,16 +37,16 @@ $sqlBookings = "SELECT
                 AND LOWER(b.status) NOT IN ('completed', 'cancelled')
                 ORDER BY b.booking_date ASC";
 
-// Query to fetch emergency service requests (keeping emergency_id as emergency_id)
+// Query to fetch emergency service requests
 $sqlEmergency = "SELECT 
-                    emergency_id,
+                    emergency_id AS booking_id,
                     'Emergency Service' AS service_name,
                     0 AS service_price,  
                     service_needed AS service_description,
                     status,
                     request_time AS booking_date,
                     request_time AS booking_time,
-                    NULL AS image_url
+                    'emergency_image.jpg' AS image_url
                 FROM emergency_service
                 WHERE user_email = :email 
                 AND LOWER(status) NOT IN ('completed', 'cancelled')
@@ -65,11 +65,14 @@ try {
     $stmt->execute();
     $emergencyServices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Merge both results
+    $allBookings = array_merge($bookings, $emergencyServices);
+
     // Base URLs
     $base_url = "http://localhost/AutoLink/web/uploads/";
-    $emergency_image_url = "http://localhost/AutoLink/mobile/emergency.jpg"; // Update if needed
+    $emergency_image_url = "http://localhost/AutoLink/mobile/emergency.jpg"; // Change to match your web-accessible path
 
-    foreach ($bookings as &$booking) {
+    foreach ($allBookings as &$booking) {
         // Ensure values are properly formatted
         $booking['service_name'] = htmlspecialchars($booking['service_name'] ?? "No Service Name");
         $booking['service_price'] = number_format((float)($booking['service_price'] ?? 0), 2, '.', '');
@@ -77,44 +80,33 @@ try {
         $booking['status'] = htmlspecialchars($booking['status'] ?? "Unknown");
 
         // Handle image URLs
-        if (!empty($booking['image_url'])) {
+        if ($booking['service_name'] === "Emergency Service") {
+            $booking['image_url'] = $emergency_image_url; // Use predefined emergency image
+        } elseif (!empty($booking['image_url'])) {
             $imagePath = ltrim($booking['image_url'], '/');
+            if (!str_starts_with($imagePath, "uploads/")) {
+                $imagePath = "uploads/" . $imagePath;
+            }
             $booking['image_url'] = $base_url . rawurlencode(basename($imagePath));
         } else {
             $booking['image_url'] = $base_url . "default.jpg"; // Default image if none found
         }
-    }
-
-    foreach ($emergencyServices as &$emergency) {
-        // Properly map emergency ID for cancellation
-        $emergency['booking_id'] = $emergency['emergency_id']; 
-        unset($emergency['emergency_id']); // Remove to avoid confusion
-
-        // Format emergency fields
-        $emergency['service_name'] = "Emergency Service";
-        $emergency['service_price'] = "0.00";
-        $emergency['service_description'] = htmlspecialchars($emergency['service_description'] ?? "No Description");
-        $emergency['status'] = htmlspecialchars($emergency['status'] ?? "Unknown");
-        $emergency['image_url'] = $emergency_image_url;
 
         // Format booking_date and booking_time
-        if (!empty($emergency['booking_date'])) {
-            $created_at = new DateTime($emergency['booking_date']);
-            $emergency['booking_date'] = $created_at->format('Y-m-d'); // Format as date
+        if (!empty($booking['booking_date'])) {
+            $created_at = new DateTime($booking['booking_date']);
+            $booking['booking_date'] = $created_at->format('Y-m-d'); // Format as date
 
-            if (!empty($emergency['booking_time'])) {
-                $emergency['booking_time'] = (new DateTime($emergency['booking_time']))->format('h:i A'); // 12-hour format
+            if (!empty($booking['booking_time'])) {
+                $booking['booking_time'] = (new DateTime($booking['booking_time']))->format('h:i A'); // 12-hour format with AM/PM
             } else {
-                $emergency['booking_time'] = 'N/A';
+                $booking['booking_time'] = 'N/A';
             }
         } else {
-            $emergency['booking_date'] = 'N/A';
-            $emergency['booking_time'] = 'N/A';
+            $booking['booking_date'] = 'N/A';
+            $booking['booking_time'] = 'N/A';
         }
     }
-
-    // Merge both results
-    $allBookings = array_merge($bookings, $emergencyServices);
 
     // Return response as JSON
     echo json_encode(["success" => true, "data" => $allBookings], JSON_PRETTY_PRINT);
