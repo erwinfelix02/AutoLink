@@ -1,0 +1,73 @@
+Received: Array
+(
+    [id] => 23
+    [type] => booking
+)
+
+Error: Booking request not found.
+Received: Array
+(
+    [id] => 103
+    [type] => booking
+)
+
+Received: Array
+(
+    [id] => 23
+    [type] => booking
+)
+
+Error: Booking request not found.
+Received: Array
+(
+    [id] => 104
+    [type] => booking
+)
+
+Received: Array
+(
+    [id] => 23
+    [type] => booking
+)
+
+Error: Booking request not found.
+Received: Array
+(
+    [id] => 23
+    [type] => booking
+)
+
+Fetched Status: false
+Error: Booking request not found.
+Received POST Data: Array
+(
+    [booking_id] => 23
+    [type] => booking
+)
+
+Received POST Data: Array
+(
+    [booking_id] => 106
+    [type] => booking
+)
+
+Received POST Data: Array
+(
+    [booking_id] => 23
+    [type] => booking
+)
+
+Error: Booking not found.
+Received POST Data: Array
+(
+    [booking_id] => 107
+    [type] => booking
+)
+
+Received POST Data: Array
+(
+    [booking_id] => 23
+    [type] => booking
+)
+
+Error: Booking not found.
