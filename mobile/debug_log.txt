@@ -1,0 +1,2 @@
+Bookings Cost: 1000
+Emergency Cost: 10000
