@@ -32,21 +32,38 @@ if (empty($serviceName)) {
 }
 
 try {
-    // Prepare the statement to prevent SQL injection
+    // First, check if the service exists in the `services` table
     $stmt = $conn->prepare("SELECT description, price FROM services WHERE name = ?");
     $stmt->execute([$serviceName]);
 
-    // Fetch the result
+    // Fetch the result from the `services` table
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($row) {
+        // If the service is found in the `services` table
         echo json_encode([
             "success" => true,
             "description" => $row['description'],
             "price" => number_format(floatval($row['price']), 2)
         ], JSON_UNESCAPED_UNICODE);
     } else {
-        echo json_encode(["success" => false, "message" => "Service not found"], JSON_UNESCAPED_UNICODE);
+        // If not found in `services`, check the `emergency_service` table
+        $stmt = $conn->prepare("SELECT other_info AS description, price FROM emergency_service WHERE service_needed = ?");
+        $stmt->execute([$serviceName]);
+
+        // Fetch the result from the `emergency_service` table
+        $emergencyRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($emergencyRow) {
+            // If found in `emergency_service`, return the `other_info` as description
+            echo json_encode([
+                "success" => true,
+                "description" => $emergencyRow['description'],
+                "price" => number_format(floatval($emergencyRow['price']), 2)
+            ], JSON_UNESCAPED_UNICODE);
+        } else {
+            echo json_encode(["success" => false, "message" => "Service not found"], JSON_UNESCAPED_UNICODE);
+        }
     }
 } catch (PDOException $e) {
     echo json_encode(["success" => false, "message" => "Database error: " . $e->getMessage()], JSON_UNESCAPED_UNICODE);

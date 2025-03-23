@@ -41,12 +41,12 @@ $sqlBookings = "SELECT
 // SQL Query: Fetch completed emergency services
 $sqlEmergencies = "SELECT 
                     e.emergency_id AS id,
-                    'Emergency Service' AS service_name, 
-                    e.service_needed AS description,
+                    e.service_needed AS service_name, 
+                    e.other_info AS description,
                     DATE(e.request_time) AS booking_date,
                     '' AS booking_time, 
                     e.status,
-                    '' AS service_image  -- Placeholder, will be replaced later
+                    'emergency.jpg' AS service_image  -- Placeholder, will be replaced later
                 FROM emergency_service e
                 WHERE LOWER(e.status) = 'completed' AND e.user_email = :user_email
                 ORDER BY e.request_time ASC";
@@ -85,17 +85,19 @@ try {
         // Convert status to "Completed"
         $service['status'] = ucfirst(strtolower(htmlspecialchars($service['status'] ?? "Unknown")));
 
-        // Handle the image URL
-        if ($service['service_name'] === "Emergency Service") {
-            $service['image_url'] = $emergency_image_url; // Set emergency service image
+
+            // Handle the image URL
+        if (!empty($service['service_image']) && $service['service_image'] !== 'emergency.jpg') {
+            // If a custom service image is provided (and not emergency.jpg), use it
+            $imagePath = trim($service['service_image'], '/');
+            $service['image_url'] = $base_url_services . rawurlencode(basename($imagePath));
         } else {
-            if (!empty($service['service_image'])) {
-                $imagePath = trim($service['service_image'], '/');
-                $service['image_url'] = $base_url_services . rawurlencode(basename($imagePath));
-            } else {
-                $service['image_url'] = $base_url_services . "default.jpg"; // Default image if no image found
-            }
+            // If service_image is 'emergency.jpg' or not provided, use the emergency image
+            $service['image_url'] = $service['service_image'] === 'emergency.jpg'
+                ? $emergency_image_url  // Use emergency image
+                : $base_url_services . "default.jpg"; // Default image if no image found
         }
+
 
         // Format booking date and time
         $service['booking_date'] = !empty($service['booking_date']) 
