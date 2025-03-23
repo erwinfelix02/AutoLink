@@ -40,13 +40,13 @@ $sqlBookings = "SELECT
 // Query to fetch emergency service requests
 $sqlEmergency = "SELECT 
                     emergency_id AS booking_id,
-                    'Emergency Service' AS service_name,
-                    0 AS service_price,  
-                    service_needed AS service_description,
+                    service_needed AS service_name,
+                    price AS service_price,  
+                    other_info AS service_description,
                     status,
                     request_time AS booking_date,
                     request_time AS booking_time,
-                    'emergency_image.jpg' AS image_url
+                    'emergency.jpg' AS image_url
                 FROM emergency_service
                 WHERE user_email = :email 
                 AND LOWER(status) NOT IN ('completed', 'cancelled')
@@ -79,9 +79,10 @@ try {
         $booking['service_description'] = htmlspecialchars($booking['service_description'] ?? "No Description");
         $booking['status'] = htmlspecialchars($booking['status'] ?? "Unknown");
 
-        // Handle image URLs
-        if ($booking['service_name'] === "Emergency Service") {
-            $booking['image_url'] = $emergency_image_url; // Use predefined emergency image
+            // Handle image URLs
+        if (!empty($booking['image_url']) && $booking['image_url'] === 'emergency.jpg') {
+            // Use predefined emergency image for emergency service requests
+            $booking['image_url'] = "http://localhost/AutoLink/mobile/emergency.jpg"; 
         } elseif (!empty($booking['image_url'])) {
             $imagePath = ltrim($booking['image_url'], '/');
             if (!str_starts_with($imagePath, "uploads/")) {
@@ -89,7 +90,8 @@ try {
             }
             $booking['image_url'] = $base_url . rawurlencode(basename($imagePath));
         } else {
-            $booking['image_url'] = $base_url . "default.jpg"; // Default image if none found
+            // If no image is provided, use a default image
+            $booking['image_url'] = $base_url . "default.jpg"; 
         }
 
         // Format booking_date and booking_time
