@@ -1,0 +1,36 @@
+stdClass Object
+(
+    [current_password] => 98765433636
+    [new_password] => 12345678
+    [id] => 1
+)
+stdClass Object
+(
+    [current_password] => 87654321
+    [new_password] => 87654321
+    [id] => 1
+)
+stdClass Object
+(
+    [current_password] => 87654321
+    [new_password] => 87654321
+    [id] => 1
+)
+stdClass Object
+(
+    [current_password] => 87654321
+    [new_password] => 12345678
+    [id] => 1
+)
+stdClass Object
+(
+    [current_password] => 12345678
+    [new_password] => 12345678
+    [id] => 1
+)
+stdClass Object
+(
+    [current_password] => 12345678
+    [new_password] => 87654321
+    [id] => 1
+)
