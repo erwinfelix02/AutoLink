@@ -19,16 +19,27 @@ $query = "
         COALESCE(SUM(f.quantity), 0) AS fuelQuantity,
         COALESCE(SUM(f.cost), 0) AS fuelCost,
 
-        -- Fetch service cost from completed bookings only
+        -- Combine service cost (bookings + emergency service)
         (
-            SELECT COALESCE(SUM(b.service_price), 0) 
-            FROM bookings b  
-            WHERE b.user_email = :user_email 
-            AND b.selected_vehicle = CONCAT(:vehicle_make, ' ', :vehicle_model)
-            AND b.status = 'completed'
+            COALESCE(
+                (SELECT SUM(b.service_price) 
+                 FROM bookings b 
+                 WHERE b.user_email = :user_email 
+                 AND b.selected_vehicle = CONCAT(:vehicle_make, ' ', :vehicle_model)
+                 AND b.status = 'completed'
+                ), 0
+            ) +
+            COALESCE(
+                (SELECT SUM(e.price) 
+                 FROM emergency_service e 
+                 WHERE e.user_email = :user_email 
+                 AND e.vehicle = CONCAT(:vehicle_make, ' ', :vehicle_model)
+                 AND e.status = 'completed'
+                ), 0
+            )
         ) AS serviceCost,
 
-        -- Calculate total cost (fuel cost + completed service cost)
+        -- Calculate total cost (fuel + service)
         (
             COALESCE(SUM(f.cost), 0) + 
             COALESCE(
@@ -37,6 +48,14 @@ $query = "
                  WHERE b.user_email = :user_email 
                  AND b.selected_vehicle = CONCAT(:vehicle_make, ' ', :vehicle_model)
                  AND b.status = 'completed'
+                ), 0
+            ) +
+            COALESCE(
+                (SELECT SUM(e.price) 
+                 FROM emergency_service e 
+                 WHERE e.user_email = :user_email 
+                 AND e.vehicle = CONCAT(:vehicle_make, ' ', :vehicle_model)
+                 AND e.status = 'completed'
                 ), 0
             )
         ) AS totalCost
