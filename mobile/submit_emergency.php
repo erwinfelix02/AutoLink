@@ -21,9 +21,10 @@ try {
     $longitude = filter_var($_POST['longitude'] ?? '', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
     $service_needed = filter_var($_POST['service_needed'] ?? '', FILTER_SANITIZE_STRING);
     $vehicle = filter_var($_POST['vehicle'] ?? '', FILTER_SANITIZE_STRING);
+    $other_info = filter_var($_POST['other_info'] ?? '', FILTER_SANITIZE_STRING); // Handle 'other_info'
     
     // Default status for new emergency service requests
-    $status = "pending";
+    $status = "pending"; // Default status set to 'pending'
 
     // Validate required fields
     if (empty($user_email) || empty($full_name) || empty($latitude) || empty($longitude) || empty($service_needed) || empty($vehicle)) {
@@ -38,8 +39,8 @@ try {
     }
 
     // Insert data into the database using PDO
-    $stmt = $conn->prepare("INSERT INTO emergency_service (user_email, full_name, latitude, longitude, service_needed, vehicle, status) 
-                            VALUES (:user_email, :full_name, :latitude, :longitude, :service_needed, :vehicle, :status)");
+    $stmt = $conn->prepare("INSERT INTO emergency_service (user_email, full_name, latitude, longitude, service_needed, vehicle, status, other_info) 
+                            VALUES (:user_email, :full_name, :latitude, :longitude, :service_needed, :vehicle, :status, :other_info)");
     
     $stmt->execute([
         ":user_email" => $user_email,
@@ -48,7 +49,8 @@ try {
         ":longitude" => $longitude,
         ":service_needed" => $service_needed,
         ":vehicle" => $vehicle,
-        ":status" => $status
+        ":status" => $status,
+        ":other_info" => $other_info // Insert 'other_info' as well
     ]);
 
     // Get the last inserted emergency_id

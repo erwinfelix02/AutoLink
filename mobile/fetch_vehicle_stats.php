@@ -13,8 +13,8 @@ try {
         $email = $_GET["email"];
 
         // Query to fetch only `vehicle_make` and `vehicle_model`
-        $query = "SELECT vehicle_make AS vehicleMake, vehicle_model AS vehicleModel 
-                  FROM vehicle_fillups WHERE user_email = :email";
+        $query = "SELECT make AS vehicleMake, model AS vehicleModel 
+                  FROM vehicles WHERE email = :email";
 
         $stmt = $conn->prepare($query);
         $stmt->bindParam(":email", $email, PDO::PARAM_STR);

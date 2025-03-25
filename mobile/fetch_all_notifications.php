@@ -12,10 +12,10 @@ $userEmail = $_POST['user_email'];
 
 try {
    $sql = "SELECT 
-                n.id AS notification_id,   -- Fetches unique notification_id
+                n.id AS notification_id,
                 n.booking_id, 
-                n.emergency_id,  -- Added emergency_id to the selection
-                b.service_name, -- Use service name if it's a booking
+                n.emergency_id, 
+                COALESCE(b.service_name, e.service_needed) AS service_name, -- Fetch service_name from bookings or service_needed from emergency
                 CASE 
                     WHEN LOWER(n.status) = 'new' THEN 'Your booking is pending approval.'  
                     WHEN LOWER(n.status) = 'pending' THEN 'Your booking is pending approval.' 
@@ -23,15 +23,16 @@ try {
                     WHEN LOWER(n.status) = 'approved' THEN 'Your booking has been approved!'
                     WHEN LOWER(n.status) = 'declined' THEN 'Your booking has been declined.'
                     WHEN LOWER(n.status) = 'completed' THEN 'Your booking has been successfully completed!'
-                    WHEN LOWER(n.status) = 'cancelled' THEN 'Your booking has been cancelled.'  -- Added message for cancelled status
+                    WHEN LOWER(n.status) = 'cancelled' THEN 'Your booking has been cancelled.'
                     ELSE 'Unknown status'
                 END AS message, 
                 LOWER(n.status) AS status,  
                 n.is_read,  
                 DATE_FORMAT(n.created_at, '%Y-%m-%d %H:%i:%s') AS timestamp 
             FROM notifications n
-            LEFT JOIN bookings b ON n.booking_id = b.booking_id -- Changed to LEFT JOIN to allow fetching emergency notifications too
-            WHERE n.user_email = :user_email  -- All notifications, read or unread
+            LEFT JOIN bookings b ON n.booking_id = b.booking_id
+            LEFT JOIN emergency_service e ON n.emergency_id = e.emergency_id -- Join emergency table to get service_needed
+            WHERE n.user_email = :user_email
             ORDER BY n.created_at DESC";
 
     $stmt = $conn->prepare($sql);

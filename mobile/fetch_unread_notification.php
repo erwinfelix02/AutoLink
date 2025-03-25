@@ -15,7 +15,7 @@ try {
                 n.id AS notification_id,
                 n.booking_id, 
                 n.emergency_id, 
-                b.service_name, 
+                COALESCE(b.service_name, e.service_needed) AS service_name, 
                 CASE 
                     WHEN LOWER(n.status) = 'new' THEN 'Your booking is pending approval.'
                     WHEN LOWER(n.status) = 'pending' THEN 'Your booking is pending approval.'
@@ -23,6 +23,7 @@ try {
                     WHEN LOWER(n.status) = 'approved' THEN 'Your booking has been approved!'
                     WHEN LOWER(n.status) = 'declined' THEN 'Your booking has been declined.'
                     WHEN LOWER(n.status) = 'completed' THEN 'Your booking has been successfully completed!'
+                    WHEN LOWER(n.status) = 'cancelled' THEN 'Your booking has been cancelled.' 
                     ELSE 'Unknown status'
                 END AS message, 
                 LOWER(n.status) AS status,  
@@ -30,6 +31,7 @@ try {
                 DATE_FORMAT(n.created_at, '%Y-%m-%d %H:%i:%s') AS timestamp 
             FROM notifications n
             LEFT JOIN bookings b ON n.booking_id = b.booking_id
+            LEFT JOIN emergency_service e ON n.emergency_id = e.emergency_id
             WHERE n.user_email = :user_email 
             AND n.is_read = 0  -- Fetch only unread notifications
             ORDER BY n.created_at DESC";
