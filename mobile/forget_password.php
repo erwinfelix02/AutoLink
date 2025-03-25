@@ -10,47 +10,48 @@ header('Content-Type: application/json');
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = isset($_POST['email']) ? trim(strtolower($_POST['email'])) : '';
 
-    if (empty($email)) {
-        echo json_encode(["status" => "error", "message" => "Please enter your email."]);
+    // Validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo json_encode(["status" => "error", "message" => "Invalid email format."]);
         exit;
     }
 
     try {
-        // Check if the email exists (using LOWER to avoid case issues)
-        $stmt = $pdo->prepare("SELECT * FROM admins WHERE LOWER(email) = LOWER(?)");
+        // Check if email exists in the database
+        $stmt = $conn->prepare("SELECT email FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1");
         $stmt->execute([$email]);
-        $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$admin) {
+        if (!$user) {
             echo json_encode(["status" => "error", "message" => "Email not found."]);
             exit;
         }
 
-        // Generate a 6-digit random reset code
-        $reset_code = rand(100000, 999999);
-        $reset_expiry = date("Y-m-d H:i:s", strtotime("+15 minutes")); // Code expires in 15 mins
+        // Generate a 6-digit reset code & expiry time
+        $reset_code = mt_rand(100000, 999999);
+        $reset_expiry = date("Y-m-d H:i:s", strtotime("+15 minutes"));
 
-        // Update the database with the reset code and expiry
-        $stmt = $pdo->prepare("UPDATE admins SET reset_code = ?, reset_expiry = ? WHERE email = ?");
-        $stmt->execute([$reset_code, $reset_expiry, $admin['email']]);
+        // Store the reset code in the database
+        $stmt = $conn->prepare("UPDATE users SET reset_code = ?, reset_expiry = ? WHERE email = ?");
+        $stmt->execute([$reset_code, $reset_expiry, $user['email']]);
 
-        // Send email
+        // Send email with PHPMailer
         $mail = new PHPMailer(true);
         try {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'christianmondala26@gmail.com'; 
-            $mail->Password = 'ocmy yziy wqxw ibgd'; 
+            $mail->Username = 'christianmondala26@gmail.com';
+            $mail->Password = 'ocmy yziy wqxw ibgd';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
 
             $mail->setFrom(SMTP_USER, 'AutoLink Support');
-            $mail->addAddress($email);
+            $mail->addAddress($email); 
 
             $mail->isHTML(true);
             $mail->Subject = "Password Reset Code";
-            $mail->Body = "Your password reset code is: <b>$reset_code</b>. This code will expire in 15 minutes.";
+            $mail->Body = "Hello,<br><br>Your password reset code is: <b>$reset_code</b>.<br><br>This code will expire in 15 minutes.<br><br>Regards,<br>AutoLink Support";
 
             if ($mail->send()) {
                 echo json_encode(["status" => "success", "message" => "Reset code sent to your email."]);
@@ -58,7 +59,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 echo json_encode(["status" => "error", "message" => "Failed to send email."]);
             }
         } catch (Exception $e) {
-            echo json_encode(["status" => "error", "message" => "Email could not be sent. Error: " . $mail->ErrorInfo]);
+            echo json_encode(["status" => "error", "message" => "Mail error: " . $mail->ErrorInfo]);
         }
     } catch (Exception $e) {
         echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
