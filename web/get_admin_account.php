@@ -1,14 +1,18 @@
-<?php
+<?php 
 session_start();
 header('Content-Type: application/json');
 require 'config.php'; 
 
 $response = ["success" => false, "message" => "Invalid request."];
 
-// ✅ Get admin_id from session
-$admin_id = $_SESSION['admin_id'] ?? null;
+if (!isset($_SESSION['admin_id'])) {
+    echo json_encode(["success" => false, "message" => "No admin logged in."]);
+    exit;
+}
 
-if ($admin_id) {
+$admin_id = $_SESSION['admin_id'] ?? $_POST['adminid'] ?? null;
+
+try {
     $sql = "SELECT id, first_name, last_name, email, address, phone, profile_image, created_at 
             FROM admins WHERE id = :admin_id";
     $stmt = $pdo->prepare($sql);
@@ -16,13 +20,14 @@ if ($admin_id) {
     $account = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($account) {
-        // ✅ Ensure correct profile image path
-        $baseUrl = "http://localhost/Autolink/web/profile_images/";
-        $profileImage = $account['profile_image'] ?? 'default.png';
+        $baseUrl = "http://localhost/Autolink/web/";
 
-        // Fix double 'profile_images/' issue
-        $profileImage = str_replace('profile_images/', '', $profileImage);
-        $profileImage = $baseUrl . $profileImage;
+$profileImage = !empty($account['profile_image']) ? $account['profile_image'] : 'profile_images/default.png';
+
+if (!str_contains($profileImage, $baseUrl)) {
+    $profileImage = $baseUrl . $profileImage;
+}
+
 
         $response = [
             "success" => true,
@@ -38,20 +43,11 @@ if ($admin_id) {
             ]
         ];
     } else {
-        $response = ["success" => false, "message" => "Account not found."];
+        $response = ["success" => false, "message" => "Admin account not found."];
     }
-} else {
-    // ✅ Debugging session issue
-    $response = [
-        "success" => false,
-        "message" => "No admin logged in.",
-        "debug" => [
-            "session_data" => $_SESSION,
-            "session_id" => session_id()
-        ]
-    ];
+} catch (PDOException $e) {
+    $response = ["success" => false, "message" => "Database error: " . $e->getMessage()];
 }
 
 echo json_encode($response);
-
 ?>

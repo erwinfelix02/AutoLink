@@ -1,0 +1,5 @@
+Array
+(
+    [email] => christianmondala@gmail.com
+    [password] => christian07
+)

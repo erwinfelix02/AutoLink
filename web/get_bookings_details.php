@@ -24,9 +24,11 @@ try {
             "service" => $row['service_name'],
             "price" => $row['service_price'],
             "description" => $row['service_description'],
+            "status" => $row['status'],
             "date" => $row['booking_date'],
             "time" => $row['booking_time'],
             "inclusions" => $row['inclusions'],
+            "selected_vehicle" => $row['selected_vehicle'], // ✅ Include vehicle
             "created_at" => $row['created_at']
         ]);
     } else {
@@ -35,4 +37,5 @@ try {
 } catch (PDOException $e) {
     echo json_encode(["success" => false, "error" => $e->getMessage()]);
 }
+
 ?>
