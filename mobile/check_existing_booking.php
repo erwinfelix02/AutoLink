@@ -15,10 +15,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $serviceName = trim($_GET['serviceName']);
 
     try {
-        $stmt = $conn->prepare("SELECT booking_id FROM bookings WHERE user_email = ? AND selected_vehicle = ? AND service_name = ?");
+        // Check if a booking exists and is NOT cancelled
+        $stmt = $conn->prepare("SELECT status FROM bookings WHERE user_email = ? AND selected_vehicle = ? AND service_name = ? ORDER BY booking_id DESC LIMIT 1");
         $stmt->execute([$userEmail, $selectedVehicle, $serviceName]);
+        $booking = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        echo json_encode(["exists" => $stmt->rowCount() > 0]);
+        if ($booking) {
+            if (strtolower($booking['status']) === 'cancelled') {
+                echo json_encode(["exists" => false]); // Allow rebooking
+            } else {
+                echo json_encode(["exists" => true]);  // Booking still active
+            }
+        } else {
+            echo json_encode(["exists" => false]); // No booking found, allow new booking
+        }
+
     } catch (PDOException $e) {
         echo json_encode(["error" => "Database error: " . $e->getMessage()]);
     }
