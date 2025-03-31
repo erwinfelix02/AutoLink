@@ -6,29 +6,47 @@ if (isset($_GET['user_email'], $_GET['vehicle_make'], $_GET['vehicle_model'])) {
     $user_email = $_GET['user_email'];
     $vehicle_make = $_GET['vehicle_make'];
     $vehicle_model = $_GET['vehicle_model'];
-
+    
     try {
-        // Prepare the SQL query with wildcard match
-        $query = "SELECT SUM(service_price) AS total_cost FROM bookings 
-                  WHERE user_email = :user_email 
-                  AND selected_vehicle LIKE CONCAT('%', :vehicle, '%')
-                  AND status = 'completed'";
-        
-        $stmt = $conn->prepare($query);
         $vehicle = "$vehicle_make $vehicle_model";
-        
-        // Bind parameters
-        $stmt->bindValue(":user_email", $user_email, PDO::PARAM_STR);
-        $stmt->bindValue(":vehicle", $vehicle, PDO::PARAM_STR);
-        
-        // Execute query
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Fetch service cost from bookings
+        $query1 = "SELECT COALESCE(SUM(service_price), 0) AS total_service_cost 
+                   FROM bookings 
+                   WHERE user_email = :user_email 
+                   AND selected_vehicle LIKE CONCAT('%', :vehicle, '%') 
+                   AND LOWER(status) = 'completed'";
+
+        $stmt1 = $conn->prepare($query1);
+        $stmt1->bindParam(":user_email", $user_email, PDO::PARAM_STR);
+        $stmt1->bindParam(":vehicle", $vehicle, PDO::PARAM_STR);
+        $stmt1->execute();
+        $row1 = $stmt1->fetch(PDO::FETCH_ASSOC);
+        $totalServiceCost = floatval($row1['total_service_cost']);
+
+        // Fetch emergency service cost
+        $query2 = "SELECT COALESCE(SUM(price), 0) AS total_emergency_cost 
+                   FROM emergency_service 
+                   WHERE user_email = :user_email 
+                   AND vehicle LIKE CONCAT('%', :vehicle, '%') 
+                   AND LOWER(status) = 'completed'";
+
+        $stmt2 = $conn->prepare($query2);
+        $stmt2->bindParam(":user_email", $user_email, PDO::PARAM_STR);
+        $stmt2->bindParam(":vehicle", $vehicle, PDO::PARAM_STR);
+        $stmt2->execute();
+        $row2 = $stmt2->fetch(PDO::FETCH_ASSOC);
+        $totalEmergencyCost = floatval($row2['total_emergency_cost']);
+
+        // Calculate total cost
+        $grandTotal = $totalServiceCost + $totalEmergencyCost;
 
         // Return JSON response
         echo json_encode([
             "success" => true,
-            "serviceCost" => isset($row['total_cost']) ? floatval($row['total_cost']) : 0.0
+            "serviceCost" => $totalServiceCost,
+            "emergencyCost" => $totalEmergencyCost,
+            "totalCost" => $grandTotal
         ]);
         
     } catch (PDOException $e) {

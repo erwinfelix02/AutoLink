@@ -12,7 +12,7 @@ $userEmail = $_POST['user_email'];
 
 try {
     $sql = "SELECT 
-                n.id AS notification_id,
+                n.id,
                 n.booking_id, 
                 n.emergency_id, 
                 COALESCE(b.service_name, e.service_needed) AS service_name, 
